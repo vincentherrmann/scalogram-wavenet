@@ -37,7 +37,7 @@ class ParallelWavenetTrainer:
                 output = self.model((input_noise, example_cqt))
 
                 # create output cqt
-                output_signal = torch.cat([batch[0], output], dim=2).to(dev)
+                output_signal = torch.cat([batch[0].to(dev), output], dim=2).to(dev)
                 output_cqt = torch.log(abs(self.cqt_module(output_signal))**2)
 
                 loss = torch.mean((output_cqt - example_cqt)**2)
