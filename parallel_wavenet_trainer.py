@@ -1,6 +1,7 @@
 import torch
 import torch.optim
 import torch.utils.data
+import time
 from constant_q_transform import *
 from parallel_wavenet import *
 
@@ -10,6 +11,10 @@ class ParallelWavenetTrainer:
         self.model = model
         self.dataset = dataset
         self.cqt_module = cqt_module
+        self.epsilon = 1e-10
+
+        self.cqt_time = 0
+        self.model_time = 0
 
     def train(self,
               batch_size=32,
@@ -31,16 +36,26 @@ class ParallelWavenetTrainer:
         for current_epoch in range(epochs):
             print("epoch", current_epoch)
             for batch in iter(dataloader):
+
                 example_signal = torch.cat([batch[0], batch[1]], dim=2).to(dev)
-                example_cqt = torch.log(abs(self.cqt_module(example_signal))**2)
+                tic = time.time()
+                example_cqt = torch.log(abs(self.cqt_module(example_signal))**2 + self.epsilon)
+                toc = time.time()
+                self.cqt_time = toc-tic
+
                 input_noise = torch.randn(batch_size, 1, self.model.input_length, device=dev)
+
+                tic = time.time()
                 output = self.model((input_noise, example_cqt))
+                toc = time.time()
+                self.model_time = toc - tic
 
                 # create output cqt
                 output_signal = torch.cat([batch[0].to(dev), output], dim=2).to(dev)
-                output_cqt = torch.log(abs(self.cqt_module(output_signal))**2)
+                output_cqt = torch.log(abs(self.cqt_module(output_signal))**2 + self.epsilon)
 
                 loss = torch.mean((output_cqt - example_cqt)**2)
+
                 self.model.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -48,7 +63,7 @@ class ParallelWavenetTrainer:
                 step += 1
 
                 if step % 1 == 0:
-                    print("step", step, "- loss:", loss.item())
+                    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.wavenet_time)
 
 #
 #
