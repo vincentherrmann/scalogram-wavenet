@@ -9,16 +9,18 @@ def complex_multiply(a, b, complex_dim_a=None, complex_dim_b=None):
     #    print('a and b must have the same shape')
     #    print('shape a:', a.shape, 'shape b:', b.shape)
 
+    r = torch.LongTensor([0]).to(a.device)
+
     if complex_dim_a is None:
         complex_dim_a = len(a.shape) - 1
 
     if complex_dim_b is None:
         complex_dim_b = len(b.shape) - 1
 
-    real_a = torch.index_select(a, complex_dim_a, torch.LongTensor([0])).squeeze(complex_dim_a)
-    imag_a = torch.index_select(a, complex_dim_a, torch.LongTensor([1])).squeeze(complex_dim_a)
-    real_b = torch.index_select(b, complex_dim_b, torch.LongTensor([0])).squeeze(complex_dim_b)
-    imag_b = torch.index_select(b, complex_dim_b, torch.LongTensor([1])).squeeze(complex_dim_b)
+    real_a = torch.index_select(a, complex_dim_a, r).squeeze(complex_dim_a)
+    imag_a = torch.index_select(a, complex_dim_a, r+1).squeeze(complex_dim_a)
+    real_b = torch.index_select(b, complex_dim_b, r).squeeze(complex_dim_b)
+    imag_b = torch.index_select(b, complex_dim_b, r+1).squeeze(complex_dim_b)
 
     product_real = real_a * real_b - imag_a * imag_b
     product_imag = real_a * imag_b + imag_a * real_b
@@ -28,18 +30,21 @@ def complex_multiply(a, b, complex_dim_a=None, complex_dim_b=None):
 
 
 def abs(z, complex_dim=None):
+    r = torch.LongTensor([0]).to(z.device)
+
     if complex_dim is None:
         complex_dim = len(z.shape) - 1
-    real = torch.index_select(z, complex_dim, torch.LongTensor([0])).squeeze(dim=complex_dim)
-    imag = torch.index_select(z, complex_dim, torch.LongTensor([1])).squeeze(dim=complex_dim)
+    real = torch.index_select(z, complex_dim, r).squeeze(dim=complex_dim)
+    imag = torch.index_select(z, complex_dim, r+1).squeeze(dim=complex_dim)
     return torch.sqrt(real ** 2 + imag ** 2)
 
 
 def angle(z, complex_dim=None):
+    r = torch.LongTensor([0]).to(z.device)
     if complex_dim is None:
         complex_dim = len(z.shape) - 1
-    real = torch.index_select(z, complex_dim, torch.LongTensor([0])).squeeze(dim=complex_dim)
-    imag = torch.index_select(z, complex_dim, torch.LongTensor([1])).squeeze(dim=complex_dim)
+    real = torch.index_select(z, complex_dim, r).squeeze(dim=complex_dim)
+    imag = torch.index_select(z, complex_dim, r+1).squeeze(dim=complex_dim)
     return torch.atan2(imag, real)
 
 
