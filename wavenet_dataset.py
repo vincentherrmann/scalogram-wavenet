@@ -9,14 +9,17 @@ import librosa as lr
 import bisect
 import h5py
 import scipy
-import soundfile
+try:
+    import soundfile
+except:
+    print("importing soundfile package is not possible, audio files cannot be converted")
 import time
 from torch.autograd import Variable
 from pathlib import Path
 
 
 def list_all_audio_files(location):
-    types = [".mp3", ".wav", ".aif", "aiff", ".flac"]
+    types = [".mp3", ".wav", ".aif", "aiff", ".flac", ".m4a"]
     audio_files = []
     for type in types:
         audio_files.extend(sorted(location.glob('**/*' + type)))
@@ -59,6 +62,12 @@ class ParallelWavenetDataset(torch.utils.data.Dataset):
         self.start_samples = [0]
         self.train = True
         self.create_files = create_files
+
+        try:
+            _ = soundfile.available_formats()
+        except:
+            "print cannot create files, soundfile package not loaded"
+            create_files = False
 
         if create_files:
             if self.dataset_path.exists():
