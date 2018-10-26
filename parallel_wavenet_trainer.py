@@ -25,10 +25,13 @@ class ParallelWavenetTrainer:
                                                  num_workers=num_workers,
                                                  pin_memory=False)
 
+        dev = next(self.model.parameters()).device
+
         step = continue_training_at_step
         for current_epoch in range(epochs):
             print("epoch", current_epoch)
             for batch in iter(dataloader):
+                batch = batch.to(dev)
                 example_signal = torch.cat([batch[0], batch[1]], dim=2)
                 example_cqt = torch.log(abs(self.cqt_module(example_signal))**2)
                 input_noise = torch.randn(batch_size, 1, self.model.input_length)
