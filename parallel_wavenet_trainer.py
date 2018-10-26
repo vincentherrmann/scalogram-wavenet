@@ -63,7 +63,7 @@ class ParallelWavenetTrainer:
                 step += 1
 
                 if step % 1 == 0:
-                    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.wavenet_time)
+                    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.model_time)
 
 #
 #
