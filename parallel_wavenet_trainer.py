@@ -31,14 +31,13 @@ class ParallelWavenetTrainer:
         for current_epoch in range(epochs):
             print("epoch", current_epoch)
             for batch in iter(dataloader):
-                batch = batch.to(dev)
-                example_signal = torch.cat([batch[0], batch[1]], dim=2)
+                example_signal = torch.cat([batch[0], batch[1]], dim=2).to(dev)
                 example_cqt = torch.log(abs(self.cqt_module(example_signal))**2)
-                input_noise = torch.randn(batch_size, 1, self.model.input_length)
+                input_noise = torch.randn(batch_size, 1, self.model.input_length, device=dev)
                 output = self.model((input_noise, example_cqt))
 
                 # create output cqt
-                output_signal = torch.cat([batch[0], output], dim=2)
+                output_signal = torch.cat([batch[0], output], dim=2).to(dev)
                 output_cqt = torch.log(abs(self.cqt_module(output_signal))**2)
 
                 loss = torch.mean((output_cqt - example_cqt)**2)
