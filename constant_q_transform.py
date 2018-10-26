@@ -127,3 +127,8 @@ class CQT(nn.Module):
         real = torch.cat(real, dim=1)
         imag = torch.cat(imag, dim=1)
         return torch.stack([real, imag], dim=3)
+
+    def to(self, device):
+        super().to(device)
+        for conv in self.conv_modules:
+            conv.to(device)
