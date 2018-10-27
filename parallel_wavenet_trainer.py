@@ -7,10 +7,11 @@ from parallel_wavenet import *
 
 
 class ParallelWavenetTrainer:
-    def __init__(self, model: WaveNetModel, dataset, cqt_module):
+    def __init__(self, model: WaveNetModel, dataset, cqt_module, logger):
         self.model = model
         self.dataset = dataset
         self.cqt_module = cqt_module
+        self.logger = logger
         self.loss_func = nn.MSELoss()
         self.epsilon = 1e-10
 
@@ -70,11 +71,13 @@ class ParallelWavenetTrainer:
                 loss.backward()
                 optimizer.step()
 
+                self.logger.log(step, loss.item())
+
                 step += 1
 
-                if step % 1 == 0:
-                    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.model_time,
-                          "s - loading_time:", self.loading_time, "s")
+                #if step % 1 == 0:
+                #    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.model_time,
+                #          "s - loading_time:", self.loading_time, "s")
 
                 tic = time.time()
 #
