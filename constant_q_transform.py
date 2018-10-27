@@ -3,7 +3,7 @@ import torch.nn as nn
 import librosa as lr
 import numpy as np
 import math
-import pdb
+
 
 def complex_multiply(a, b, complex_dim_a=None, complex_dim_b=None):
     # if a.shape != b.shape:
@@ -138,9 +138,6 @@ class CQT(nn.Module):
         super().to(device)
         for conv in self.conv_modules:
             conv.to(device)
-
-import pydevd
-pydevd.settrace(suspend=False, trace_only_current_thread=True)
 
 def debug_hook(grad):
     print("grad:", grad)
