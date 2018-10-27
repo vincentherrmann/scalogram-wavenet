@@ -29,7 +29,7 @@ class ParallelWavenetTrainer:
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         dataloader = torch.utils.data.DataLoader(self.dataset,
                                                  batch_size=batch_size,
-                                                 shuffle=False, #True,
+                                                 shuffle=True,
                                                  num_workers=num_workers,
                                                  pin_memory=False)
 
@@ -71,9 +71,9 @@ class ParallelWavenetTrainer:
                 loss.backward()
                 optimizer.step()
 
-                self.logger.log(step, loss.item())
-
                 step += 1
+
+                self.logger.log(step, loss.item())
 
                 #if step % 1 == 0:
                 #    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.model_time,
