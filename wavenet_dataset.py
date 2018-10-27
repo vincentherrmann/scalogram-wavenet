@@ -100,7 +100,8 @@ class ParallelWavenetDataset(torch.utils.data.Dataset):
             data, _ = lr.load(str(file), sr=self.sampling_rate, mono=self.mono, dtype=np.float32)
             new_name = 'file_' + str(i) + ".wav"
             new_file = self.dataset_path / new_name
-            lr.output.write_wav(str(new_file), data, sr=self.sampling_rate)
+            soundfile.write(str(new_file), data, samplerate=self.sampling_rate, subtype='PCM_16')
+            #lr.output.write_wav(str(new_file), data, sr=self.sampling_rate)
             print("processed " + str(file))
 
     def calculate_length(self):

@@ -11,10 +11,12 @@ class ParallelWavenetTrainer:
         self.model = model
         self.dataset = dataset
         self.cqt_module = cqt_module
+        self.loss_func = nn.MSELoss()
         self.epsilon = 1e-10
 
         self.cqt_time = 0
         self.model_time = 0
+        self.loading_time = 0
 
     def train(self,
               batch_size=32,
@@ -26,18 +28,21 @@ class ParallelWavenetTrainer:
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         dataloader = torch.utils.data.DataLoader(self.dataset,
                                                  batch_size=batch_size,
-                                                 shuffle=True,
+                                                 shuffle=False, #True,
                                                  num_workers=num_workers,
                                                  pin_memory=False)
 
         dev = next(self.model.parameters()).device
 
         step = continue_training_at_step
+        tic = time.time()
         for current_epoch in range(epochs):
             print("epoch", current_epoch)
             for batch in iter(dataloader):
-
+                toc = time.time()
+                self.loading_time = toc - tic
                 example_signal = torch.cat([batch[0], batch[1]], dim=2).to(dev)
+                example_signal.requires_grad = False
                 tic = time.time()
                 example_cqt = torch.log(abs(self.cqt_module(example_signal))**2 + self.epsilon)
                 toc = time.time()
@@ -52,9 +57,14 @@ class ParallelWavenetTrainer:
 
                 # create output cqt
                 output_signal = torch.cat([batch[0].to(dev), output], dim=2).to(dev)
-                output_cqt = torch.log(abs(self.cqt_module(output_signal))**2 + self.epsilon)
+                output_cqt = self.cqt_module(output_signal)
+                output_cqt = abs(output_cqt + self.epsilon)**2
+                output_cqt = torch.log(output_cqt + self.epsilon)
 
-                loss = torch.mean((output_cqt - example_cqt)**2)
+                loss = self.loss_func(output_cqt, example_cqt)
+
+                if torch.isnan(loss).item() > 0:
+                    print("error, loss is nan.")
 
                 self.model.zero_grad()
                 loss.backward()
@@ -63,8 +73,10 @@ class ParallelWavenetTrainer:
                 step += 1
 
                 if step % 1 == 0:
-                    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.model_time)
+                    print("step", step, "- loss:", loss.item(), "- cqt:", self.cqt_time, "s - model:", self.model_time,
+                          "s - loading_time:", self.loading_time, "s")
 
+                tic = time.time()
 #
 #
 # class WavenetTrainer:

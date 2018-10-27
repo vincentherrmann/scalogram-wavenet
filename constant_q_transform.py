@@ -3,6 +3,7 @@ import torch.nn as nn
 import librosa as lr
 import numpy as np
 import math
+import pdb
 
 def complex_multiply(a, b, complex_dim_a=None, complex_dim_b=None):
     # if a.shape != b.shape:
@@ -118,7 +119,7 @@ class CQT(nn.Module):
             # print(this_filter.shape)
             this_conv = nn.Conv1d(in_channels=1, out_channels=this_filter.shape[0], kernel_size=size, bias=False,
                                   stride=hop_length, padding=size // 2)
-            this_conv.weight = torch.nn.Parameter(this_filter.unsqueeze(1))
+            this_conv.weight = torch.nn.Parameter(this_filter.unsqueeze(1), requires_grad=False) # should be False
             self.conv_modules.append(this_conv)
 
     def forward(self, x):
@@ -137,3 +138,19 @@ class CQT(nn.Module):
         super().to(device)
         for conv in self.conv_modules:
             conv.to(device)
+
+import pydevd
+pydevd.settrace(suspend=False, trace_only_current_thread=True)
+
+def debug_hook(grad):
+    print("grad:", grad)
+    return grad
+
+def debug_backward_hook(module, grad_input, grad_output):
+    print("passed through backward hook")
+    diagnostic_hook(module, grad_input, grad_output)
+    pass
+
+def diagnostic_hook(module, grad_input, grad_output):
+    module += 1
+    print("module:", module, "- grad in:", grad_input, "- grad out:", grad_output)
