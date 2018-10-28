@@ -31,7 +31,8 @@ class ParallelWavenetTrainer:
                                                  batch_size=batch_size,
                                                  shuffle=True,
                                                  num_workers=num_workers,
-                                                 pin_memory=False)
+                                                 pin_memory=False,
+                                                 drop_last=True)
 
         dev = next(self.model.parameters()).device
 
@@ -80,7 +81,49 @@ class ParallelWavenetTrainer:
                 #          "s - loading_time:", self.loading_time, "s")
 
                 tic = time.time()
-#
+
+    def validate(self):
+        self.model.eval()
+        dev = next(self.model.parameters()).device
+
+        dataset_state = self.dataset.train  # remember the current state
+        self.dataset.train = False
+        total_loss = 0
+        accurate_classifications = 0
+
+        batch_size = 8
+        dataloader = torch.utils.data.DataLoader(self.dataset,
+                                                 batch_size=batch_size,
+                                                 shuffle=False,
+                                                 num_workers=1,
+                                                 pin_memory=False,
+                                                 drop_last=True)
+
+        for batch in iter(dataloader):
+            example_signal = torch.cat([batch[0], batch[1]], dim=2).to(dev)
+            example_signal.requires_grad = False
+            example_cqt = torch.log(abs(self.cqt_module(example_signal)) ** 2 + self.epsilon)
+
+            input_noise = torch.randn(example_signal.shape[0], 1, self.model.input_length, device=dev)
+
+            output = self.model((input_noise, example_cqt))
+
+            # create output cqt
+            output_signal = torch.cat([batch[0].to(dev), output], dim=2).to(dev)
+            output_cqt = self.cqt_module(output_signal)
+            output_cqt = abs(output_cqt + self.epsilon) ** 2
+            output_cqt = torch.log(output_cqt + self.epsilon)
+
+            loss = self.loss_func(output_cqt, example_cqt).item()
+            total_loss += loss
+
+        avg_loss = total_loss / len(self.dataloader)
+        avg_accuracy = 0
+        self.dataset.train = dataset_state
+        self.model.train()
+        return avg_loss, avg_accuracy
+
+
 #
 # class WavenetTrainer:
 #     def __init__(self,
