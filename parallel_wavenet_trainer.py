@@ -117,7 +117,7 @@ class ParallelWavenetTrainer:
             loss = self.loss_func(output_cqt, example_cqt).item()
             total_loss += loss
 
-        avg_loss = total_loss / len(self.dataloader)
+        avg_loss = total_loss / len(dataloader)
         avg_accuracy = 0
         self.dataset.train = dataset_state
         self.model.train()
